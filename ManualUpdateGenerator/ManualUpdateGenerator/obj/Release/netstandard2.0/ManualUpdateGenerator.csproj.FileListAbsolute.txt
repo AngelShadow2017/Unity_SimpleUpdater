@@ -1,0 +1,10 @@
+C:\Users\ZeroAs\source\repos\ManualUpdateGenerator\ManualUpdateGenerator\bin\Release\netstandard2.0\ManualUpdateGenerator.deps.json
+C:\Users\ZeroAs\source\repos\ManualUpdateGenerator\ManualUpdateGenerator\bin\Release\netstandard2.0\ManualUpdateGenerator.dll
+C:\Users\ZeroAs\source\repos\ManualUpdateGenerator\ManualUpdateGenerator\bin\Release\netstandard2.0\ManualUpdateGenerator.pdb
+C:\Users\ZeroAs\source\repos\ManualUpdateGenerator\ManualUpdateGenerator\obj\Release\netstandard2.0\ManualUpdateGenerator.csproj.AssemblyReference.cache
+C:\Users\ZeroAs\source\repos\ManualUpdateGenerator\ManualUpdateGenerator\obj\Release\netstandard2.0\ManualUpdateGenerator.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\ZeroAs\source\repos\ManualUpdateGenerator\ManualUpdateGenerator\obj\Release\netstandard2.0\ManualUpdateGenerator.AssemblyInfoInputs.cache
+C:\Users\ZeroAs\source\repos\ManualUpdateGenerator\ManualUpdateGenerator\obj\Release\netstandard2.0\ManualUpdateGenerator.AssemblyInfo.cs
+C:\Users\ZeroAs\source\repos\ManualUpdateGenerator\ManualUpdateGenerator\obj\Release\netstandard2.0\ManualUpdateGenerator.csproj.CoreCompileInputs.cache
+C:\Users\ZeroAs\source\repos\ManualUpdateGenerator\ManualUpdateGenerator\obj\Release\netstandard2.0\ManualUpdateGenerator.dll
+C:\Users\ZeroAs\source\repos\ManualUpdateGenerator\ManualUpdateGenerator\obj\Release\netstandard2.0\ManualUpdateGenerator.pdb

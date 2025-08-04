@@ -1,0 +1,403 @@
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
+using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+using System.Text;
+
+namespace ZeroAs.ZeroAs_Core.ManualUpdateGenerator
+{
+    [Generator]
+    public class ManualUpdaterSourceGenerator : ISourceGenerator
+    {
+        public const string fileNamespace = "ZeroAs.ZeroAs_Core.ManualUpdaters";
+        private const string CoreTypesFileName = "ManualUpdaterCoreTypes.g.cs";
+
+        const string managerName = fileNamespace + ".ManualUpdateManager";
+        private const string CoreTypesCode = @"
+namespace ZeroAs.ZeroAs_Core.ManualUpdaters
+{
+    // 标记类需要手动 Update 注册
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
+    public sealed class ManualUpdaterAttribute : Attribute
+    {
+    }
+
+    // 两个空接口，表明类支持 ManualUpdate 或 ManualFixedUpdate
+    public interface IManualUpdater
+    {
+    }
+
+    public interface IFixedManualUpdater
+    {
+    }
+}
+";
+        private const string RegistrationFlagName = "__自主更新是否注册标志manualUpdaterRegistered__"; // flag常量名
+        public void Initialize(GeneratorInitializationContext context)
+        {
+            context.RegisterForSyntaxNotifications(() => new ManualUpdaterSyntaxReceiver());
+        }
+
+        public void Execute(GeneratorExecutionContext context)
+        {
+            if (context.Compilation.AssemblyName.StartsWith("Unity"))
+            {
+                return; // Unity相关程序集不处理
+            }
+            if (!(context.SyntaxReceiver is ManualUpdaterSyntaxReceiver receiver))
+                return;
+
+            INamedTypeSymbol monoBehaviourSymbol = context.Compilation.GetTypeByMetadataName("UnityEngine.MonoBehaviour");
+
+            // 获取符号（推荐用 GetTypeByMetadataName）
+            var attrSymbol = context.Compilation.GetTypeByMetadataName(fileNamespace + ".ManualUpdaterAttribute");
+            var iManualUpdaterSymbol = context.Compilation.GetTypeByMetadataName(fileNamespace + ".IManualUpdater");
+            var iFixedManualUpdaterSymbol = context.Compilation.GetTypeByMetadataName(fileNamespace + ".IFixedManualUpdater");
+            var hasManagerSymbol = context.Compilation.GetTypeByMetadataName(managerName) != null;
+            // 检查符号是否为空，任意一个为空就报错
+            if (monoBehaviourSymbol == null || attrSymbol == null)
+            {
+                return; // MonoBehaviour或ManualUpdaterAttribute未找到，直接返回
+            }
+            if (iManualUpdaterSymbol == null || iFixedManualUpdaterSymbol == null)
+            {
+                var diagnostic = Diagnostic.Create(
+                    new DiagnosticDescriptor(
+                        id: "MUG001",
+                        title: "类型符号缺失",
+                        messageFormat: "ManualUpdateGenerator 源生成器无法找到必要的类型符号：{0}，请包含以下代码：{1}",
+                        category: "ManualUpdater",
+                        DiagnosticSeverity.Error,
+                        isEnabledByDefault: true),
+                    Location.None,
+                    string.Join(", ",
+                        monoBehaviourSymbol == null ? "UnityEngine.MonoBehaviour" : "",
+                        attrSymbol == null ? fileNamespace + ".ManualUpdaterAttribute" : "",
+                        iManualUpdaterSymbol == null ? fileNamespace + ".IManualUpdater" : "",
+                        iFixedManualUpdaterSymbol == null ? fileNamespace + ".IFixedManualUpdater" : ""),
+                    CoreTypesCode.Trim()
+                );
+                context.ReportDiagnostic(diagnostic);
+                return;
+            }
+            foreach (var candidate in receiver.Candidates)
+            {
+                var model = context.Compilation.GetSemanticModel(candidate.SyntaxTree);
+                var classSymbol = model.GetDeclaredSymbol(candidate) as INamedTypeSymbol;
+                if (classSymbol == null)
+                    continue;
+
+                // 检查属性（使用字符串全名比较）
+                var hasAttr = classSymbol.GetAttributes()
+                .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, attrSymbol));
+
+                if (!hasAttr)
+                    continue;
+
+                // 检查partial
+                if (!candidate.Modifiers.Any(SyntaxKind.PartialKeyword))
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        new DiagnosticDescriptor(
+                            "MUG002",
+                            "需要partial类",
+                            "类'{0}'带有ManualUpdaterAttribute，但未声明为partial",
+                            "ManualUpdater",
+                            DiagnosticSeverity.Error,
+                            true),
+                        candidate.Identifier.GetLocation(),
+                        classSymbol.Name));
+                    continue;
+                }
+
+                // 检查MonoBehaviour
+                bool isMonoBehaviour = monoBehaviourSymbol != null &&
+                    classSymbol.InheritsFrom(monoBehaviourSymbol);
+
+                if (!isMonoBehaviour)
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        new DiagnosticDescriptor(
+                            "MUG003",
+                            "ManualUpdater只能用于MonoBehaviour",
+                            "类'{0}'带有ManualUpdaterAttribute，但不是MonoBehaviour的子类",
+                            "ManualUpdater",
+                            DiagnosticSeverity.Error,
+                            true),
+                        candidate.Identifier.GetLocation(),
+                        classSymbol.Name));
+                    continue;
+                }
+
+                // 检查方法
+                bool hasManualUpdate = classSymbol.GetMembers("ManualUpdate")
+                    .OfType<IMethodSymbol>()
+                    .Any(m => m.Parameters.Length == 0 && m.ReturnsVoid);
+
+                bool hasManualFixedUpdate = classSymbol.GetMembers("ManualFixedUpdate")
+                    .OfType<IMethodSymbol>()
+                    .Any(m => m.Parameters.Length == 0 && m.ReturnsVoid);
+
+                bool hasManualEnable = classSymbol.GetMembers("ManualEnable")
+                    .OfType<IMethodSymbol>()
+                    .Any(m => m.Parameters.Length == 0 && m.ReturnsVoid);
+                bool hasManualDisable = classSymbol.GetMembers("ManualDisable")
+                    .OfType<IMethodSymbol>()
+                    .Any(m => m.Parameters.Length == 0 && m.ReturnsVoid);
+
+                // 检查OnEnable方法
+                bool hasOnEnable = classSymbol.GetMembers("OnEnable")
+                    .OfType<IMethodSymbol>()
+                    .Any(m => m.Parameters.Length == 0 && m.ReturnsVoid);
+
+                if (hasOnEnable)
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        new DiagnosticDescriptor(
+                            "MUG004",
+                            "OnEnable已实现",
+                            "类'{0}'已经声明了OnEnable方法，不能由代码生成器自动生成OnEnable",
+                            "ManualUpdater",
+                            DiagnosticSeverity.Error,
+                            true),
+                        candidate.Identifier.GetLocation(),
+                        classSymbol.Name));
+                    continue;
+                }
+
+                // 检查OnDisable方法
+                bool hasOnDisable = classSymbol.GetMembers("OnDisable")
+                    .OfType<IMethodSymbol>()
+                    .Any(m => m.Parameters.Length == 0 && m.ReturnsVoid);
+
+                if (hasOnDisable)
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        new DiagnosticDescriptor(
+                            "MUG005",
+                            "OnDisable已实现",
+                            "类'{0}'已经声明了OnDisable方法，不能由代码生成器自动生成OnDisable",
+                            "ManualUpdater",
+                            DiagnosticSeverity.Error,
+                            true),
+                        candidate.Identifier.GetLocation(),
+                        classSymbol.Name));
+                    continue;
+                }
+
+                // 检查接口（使用字符串全名比较）
+                bool needsIManualUpdater = hasManualUpdate &&
+                        !classSymbol.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, iManualUpdaterSymbol));
+
+                bool needsIFixedManualUpdater = hasManualFixedUpdate &&
+                    !classSymbol.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, iFixedManualUpdaterSymbol));
+
+                // 生成代码
+                var source = GeneratePartialClass(
+                    classSymbol,
+                    needsIManualUpdater,
+                    needsIFixedManualUpdater,
+                    hasManualUpdate,
+                    hasManualFixedUpdate,
+                    hasManualEnable,
+                    hasManualDisable,
+                    fileNamespace + ".IManualUpdater",
+                    fileNamespace + ".IFixedManualUpdater",
+                    hasManagerSymbol);
+
+                context.AddSource($"{classSymbol.Name}_ManualUpdater.g.cs", SourceText.From(source, Encoding.UTF8));
+            }
+        }
+
+        private void GenerateCoreTypes(GeneratorExecutionContext context)
+        {
+            // 检查是否已经存在核心类型
+            bool coreTypesExist = context.Compilation.SyntaxTrees.Any(tree =>
+                tree.FilePath.EndsWith(CoreTypesFileName, StringComparison.OrdinalIgnoreCase));
+
+            if (coreTypesExist) return;
+
+            string coreTypes = $@"// <auto-generated/>
+using System;
+
+namespace {fileNamespace}
+{{
+    // 标记类需要手动 Update 注册
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
+    public sealed class ManualUpdaterAttribute : Attribute
+    {{
+    }}
+
+    // 两个空接口，表明类支持 ManualUpdate 或 ManualFixedUpdate
+    public interface IManualUpdater {{ public void ManualUpdate();}}
+    public interface IFixedManualUpdater {{ public void ManualFixedUpdate(); }}
+}}
+";
+            context.AddSource(CoreTypesFileName, SourceText.From(coreTypes, Encoding.UTF8));
+        }
+
+        private string GeneratePartialClass(
+            INamedTypeSymbol classSymbol,
+            bool needsIManualUpdater,
+            bool needsIFixedManualUpdater,
+            bool hasManualUpdate,
+            bool hasManualFixedUpdate,
+            bool hasManualEnable,
+            bool hasManualDisable,
+            string iManualUpdaterFullName,
+            string iFixedManualUpdaterFullName,
+            bool hasManager)
+        {
+            string namespaceName = classSymbol.ContainingNamespace.IsGlobalNamespace
+                ? null
+                : classSymbol.ContainingNamespace.ToString();
+
+            // 构建接口列表
+            var interfaces = new List<string>();
+            if (needsIManualUpdater) interfaces.Add(iManualUpdaterFullName);
+            if (needsIFixedManualUpdater) interfaces.Add(iFixedManualUpdaterFullName);
+
+            var sb = new StringBuilder();
+
+            // 命名空间
+            if (!string.IsNullOrEmpty(namespaceName))
+            {
+                sb.AppendLine($"namespace {namespaceName}");
+                sb.AppendLine("{");
+            }
+
+            // 类声明
+            sb.Append($"partial class {classSymbol.Name}");
+            if (interfaces.Count > 0)
+            {
+                sb.Append(" : " + string.Join(", ", interfaces));
+            }
+            sb.AppendLine();
+            sb.AppendLine("{");
+
+            // 注册标志字段和常量
+            //sb.AppendLine($"    private const string RegistrationFlagName = nameof({RegistrationFlagName});");
+            sb.AppendLine($"    private bool {RegistrationFlagName} = false;");
+
+            // OnEnable方法
+            sb.AppendLine();
+            sb.AppendLine("    private void OnEnable()");
+            sb.AppendLine("    {");
+            if (hasManualEnable)
+            {
+                sb.AppendLine("            ManualEnable();");
+            }
+            sb.AppendLine($"        if (!{RegistrationFlagName})");
+            sb.AppendLine("        {");
+            if (hasManualUpdate)
+            {
+                if (!hasManager)
+                {
+                    sb.AppendLine($"            UnityEngine.Debug.Log(\"没有在指定命名空间找到manager\");");
+                }
+                else
+                {
+                    sb.AppendLine($"            {managerName}.Register(this, {managerName}.UpdateType.Update, ManualUpdate);");
+                }
+            }
+            if (hasManualFixedUpdate)
+            {
+                if (!hasManager)
+                {
+                    sb.AppendLine($"            UnityEngine.Debug.Log(\"没有在指定命名空间找到manager\");");
+                }
+                else
+                {
+                    sb.AppendLine($"            {managerName}.Register(this, {managerName}.UpdateType.FixedUpdate, ManualFixedUpdate);");
+                }
+            }
+            sb.AppendLine($"            {RegistrationFlagName} = true;");
+            sb.AppendLine("        }");
+            sb.AppendLine("    }");
+
+            // OnDisable方法
+            if (hasManualUpdate || hasManualFixedUpdate || hasManualDisable)
+            {
+                sb.AppendLine();
+                sb.AppendLine("    private void OnDisable()");
+                sb.AppendLine("    {");
+                if (hasManualDisable)
+                {
+                    sb.AppendLine("            ManualDisable();");
+                }
+                sb.AppendLine($"        if ({RegistrationFlagName})");
+                sb.AppendLine("        {");
+                if (hasManualUpdate)
+                {
+                    if (!hasManager)
+                    {
+                        sb.AppendLine($"            UnityEngine.Debug.Log(\"没有在指定命名空间找到manager\");");
+                    }
+                    else
+                    {
+                        sb.AppendLine($"            {managerName}.Unregister(this, {managerName}.UpdateType.Update);");
+                    }
+                }
+                if (hasManualFixedUpdate)
+                {
+                    if (!hasManager)
+                    {
+                        sb.AppendLine($"            UnityEngine.Debug.Log(\"没有在指定命名空间找到manager类\");");
+                    }
+                    else
+                    {
+                        sb.AppendLine($"            {managerName}.Unregister(this, {managerName}.UpdateType.FixedUpdate);");
+                    }
+                }
+                sb.AppendLine($"            {RegistrationFlagName} = false;");
+                sb.AppendLine("        }");
+                sb.AppendLine("    }");
+            }
+
+            sb.AppendLine("}");
+
+            if (!string.IsNullOrEmpty(namespaceName))
+            {
+                sb.AppendLine("}");
+            }
+
+            return sb.ToString();
+        }
+
+        private class ManualUpdaterSyntaxReceiver : ISyntaxReceiver
+        {
+            public List<ClassDeclarationSyntax> Candidates { get; } = new List<ClassDeclarationSyntax>();
+
+            public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
+            {
+                if (syntaxNode is ClassDeclarationSyntax cds &&
+                    cds.AttributeLists.Count > 0)
+                {
+                    Candidates.Add(cds);
+                }
+            }
+        }
+    }
+
+    public static class SymbolExtensions
+    {
+        public static bool InheritsFrom(this INamedTypeSymbol symbol, INamedTypeSymbol baseType)
+        {
+            if (symbol == null || baseType == null)
+                return false;
+
+            var current = symbol.BaseType;
+            while (current != null)
+            {
+                if (SymbolEqualityComparer.Default.Equals(current, baseType))
+                    return true;
+                current = current.BaseType;
+            }
+            return false;
+        }
+    }
+}
