@@ -30,9 +30,11 @@ namespace ZeroAs.ZeroAs_Core.ManualUpdaters
         public void Add(MonoBehaviour behaviour, Action action,int index)
         {
             readyToUpdate[index][behaviour] = action;
+            readyToRemove[index].Remove(behaviour);
         }
         public void Remove(MonoBehaviour behaviour, int index)
         {
+            readyToUpdate[index].Remove(behaviour);
             readyToRemove[index].Add(behaviour);
         }
         public void Traverse()
