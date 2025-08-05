@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\ZeroAs\\source\\repos\\ManualUpdateGenerator\\ManualUpdateGenerator\\ManualUpdateGenerator.csproj": {}
+    "E:\\Projects\\Unity_SimpleUpdater\\ManualUpdateGenerator\\ManualUpdateGenerator\\ManualUpdateGenerator.csproj": {}
   },
   "projects": {
-    "C:\\Users\\ZeroAs\\source\\repos\\ManualUpdateGenerator\\ManualUpdateGenerator\\ManualUpdateGenerator.csproj": {
+    "E:\\Projects\\Unity_SimpleUpdater\\ManualUpdateGenerator\\ManualUpdateGenerator\\ManualUpdateGenerator.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ZeroAs\\source\\repos\\ManualUpdateGenerator\\ManualUpdateGenerator\\ManualUpdateGenerator.csproj",
+        "projectUniqueName": "E:\\Projects\\Unity_SimpleUpdater\\ManualUpdateGenerator\\ManualUpdateGenerator\\ManualUpdateGenerator.csproj",
         "projectName": "ManualUpdateGenerator",
-        "projectPath": "C:\\Users\\ZeroAs\\source\\repos\\ManualUpdateGenerator\\ManualUpdateGenerator\\ManualUpdateGenerator.csproj",
+        "projectPath": "E:\\Projects\\Unity_SimpleUpdater\\ManualUpdateGenerator\\ManualUpdateGenerator\\ManualUpdateGenerator.csproj",
         "packagesPath": "C:\\Users\\ZeroAs\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\ZeroAs\\source\\repos\\ManualUpdateGenerator\\ManualUpdateGenerator\\obj\\",
+        "outputPath": "E:\\Projects\\Unity_SimpleUpdater\\ManualUpdateGenerator\\ManualUpdateGenerator\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "E:\\HUGESOFTWARE\\VS2022Shared\\NuGetPackages"

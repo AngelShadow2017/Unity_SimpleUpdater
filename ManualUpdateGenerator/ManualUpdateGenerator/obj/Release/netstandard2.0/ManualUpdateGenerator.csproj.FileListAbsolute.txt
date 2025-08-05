@@ -8,3 +8,14 @@ C:\Users\ZeroAs\source\repos\ManualUpdateGenerator\ManualUpdateGenerator\obj\Rel
 C:\Users\ZeroAs\source\repos\ManualUpdateGenerator\ManualUpdateGenerator\obj\Release\netstandard2.0\ManualUpdateGenerator.csproj.CoreCompileInputs.cache
 C:\Users\ZeroAs\source\repos\ManualUpdateGenerator\ManualUpdateGenerator\obj\Release\netstandard2.0\ManualUpdateGenerator.dll
 C:\Users\ZeroAs\source\repos\ManualUpdateGenerator\ManualUpdateGenerator\obj\Release\netstandard2.0\ManualUpdateGenerator.pdb
+E:\Projects\Unity_SimpleUpdater\ManualUpdateGenerator\ManualUpdateGenerator\bin\Release\netstandard2.0\ManualUpdateGenerator.deps.json
+E:\Projects\Unity_SimpleUpdater\ManualUpdateGenerator\ManualUpdateGenerator\bin\Release\netstandard2.0\ManualUpdateGenerator.dll
+E:\Projects\Unity_SimpleUpdater\ManualUpdateGenerator\ManualUpdateGenerator\bin\Release\netstandard2.0\ManualUpdateGenerator.pdb
+E:\Projects\Unity_SimpleUpdater\ManualUpdateGenerator\ManualUpdateGenerator\obj\Release\netstandard2.0\ManualUpdateGenerator.csproj.AssemblyReference.cache
+E:\Projects\Unity_SimpleUpdater\ManualUpdateGenerator\ManualUpdateGenerator\obj\Release\netstandard2.0\ManualUpdateGenerator.GeneratedMSBuildEditorConfig.editorconfig
+E:\Projects\Unity_SimpleUpdater\ManualUpdateGenerator\ManualUpdateGenerator\obj\Release\netstandard2.0\ManualUpdateGenerator.AssemblyInfoInputs.cache
+E:\Projects\Unity_SimpleUpdater\ManualUpdateGenerator\ManualUpdateGenerator\obj\Release\netstandard2.0\ManualUpdateGenerator.AssemblyInfo.cs
+E:\Projects\Unity_SimpleUpdater\ManualUpdateGenerator\ManualUpdateGenerator\obj\Release\netstandard2.0\ManualUpdateGenerator.csproj.CoreCompileInputs.cache
+E:\Projects\Unity_SimpleUpdater\ManualUpdateGenerator\ManualUpdateGenerator\obj\Release\netstandard2.0\ManualUpdateGenerator.sourcelink.json
+E:\Projects\Unity_SimpleUpdater\ManualUpdateGenerator\ManualUpdateGenerator\obj\Release\netstandard2.0\ManualUpdateGenerator.dll
+E:\Projects\Unity_SimpleUpdater\ManualUpdateGenerator\ManualUpdateGenerator\obj\Release\netstandard2.0\ManualUpdateGenerator.pdb

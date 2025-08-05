@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ManualUpdateGenerator")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8b979cf8c1af3353d920af3921a9016284b3ddc9")]
 [assembly: System.Reflection.AssemblyProductAttribute("ManualUpdateGenerator")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ManualUpdateGenerator")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

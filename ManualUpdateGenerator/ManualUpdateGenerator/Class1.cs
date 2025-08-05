@@ -37,6 +37,7 @@ namespace ZeroAs.ZeroAs_Core.ManualUpdaters
 }
 ";
         private const string RegistrationFlagName = "__自主更新是否注册标志manualUpdaterRegistered__"; // flag常量名
+        private const string UpdateOrderEnumName = "ManualUpdateManager.UpdateOrder"; // Order枚举名
         public void Initialize(GeneratorInitializationContext context)
         {
             context.RegisterForSyntaxNotifications(() => new ManualUpdaterSyntaxReceiver());
@@ -92,12 +93,19 @@ namespace ZeroAs.ZeroAs_Core.ManualUpdaters
                     continue;
 
                 // 检查属性（使用字符串全名比较）
-                var hasAttr = classSymbol.GetAttributes()
-                .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, attrSymbol));
-
-                if (!hasAttr)
+                var attrData = classSymbol.GetAttributes()
+                .FirstOrDefault(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, attrSymbol));
+                var orderValue = $"default";
+                if(attrData == null)
+                {
+                    // 没有ManualUpdaterAttribute，跳过
                     continue;
-
+                }
+                if (attrData.ConstructorArguments.Length > 0 && attrData.ConstructorArguments[0].Value is int orderEnum)
+                {
+                    // Order枚举的值
+                    orderValue = $"({fileNamespace}.{UpdateOrderEnumName}){orderEnum}";
+                }
                 // 检查partial
                 if (!candidate.Modifiers.Any(SyntaxKind.PartialKeyword))
                 {
@@ -207,7 +215,8 @@ namespace ZeroAs.ZeroAs_Core.ManualUpdaters
                     hasManualDisable,
                     fileNamespace + ".IManualUpdater",
                     fileNamespace + ".IFixedManualUpdater",
-                    hasManagerSymbol);
+                    hasManagerSymbol,
+                    orderValue);
 
                 context.AddSource($"{classSymbol.Name}_ManualUpdater.g.cs", SourceText.From(source, Encoding.UTF8));
             }
@@ -250,7 +259,8 @@ namespace {fileNamespace}
             bool hasManualDisable,
             string iManualUpdaterFullName,
             string iFixedManualUpdaterFullName,
-            bool hasManager)
+            bool hasManager,
+            string updateOrder)
         {
             string namespaceName = classSymbol.ContainingNamespace.IsGlobalNamespace
                 ? null
@@ -301,7 +311,7 @@ namespace {fileNamespace}
                 }
                 else
                 {
-                    sb.AppendLine($"            {managerName}.Register(this, {managerName}.UpdateType.Update, ManualUpdate);");
+                    sb.AppendLine($"            {managerName}.Register(this, {managerName}.UpdateType.Update, ManualUpdate,{updateOrder});");
                 }
             }
             if (hasManualFixedUpdate)
@@ -312,7 +322,7 @@ namespace {fileNamespace}
                 }
                 else
                 {
-                    sb.AppendLine($"            {managerName}.Register(this, {managerName}.UpdateType.FixedUpdate, ManualFixedUpdate);");
+                    sb.AppendLine($"            {managerName}.Register(this, {managerName}.UpdateType.FixedUpdate, ManualFixedUpdate,{updateOrder});");
                 }
             }
             sb.AppendLine($"            {RegistrationFlagName} = true;");
@@ -339,7 +349,7 @@ namespace {fileNamespace}
                     }
                     else
                     {
-                        sb.AppendLine($"            {managerName}.Unregister(this, {managerName}.UpdateType.Update);");
+                        sb.AppendLine($"            {managerName}.Unregister(this, {managerName}.UpdateType.Update,{updateOrder});");
                     }
                 }
                 if (hasManualFixedUpdate)
@@ -350,7 +360,7 @@ namespace {fileNamespace}
                     }
                     else
                     {
-                        sb.AppendLine($"            {managerName}.Unregister(this, {managerName}.UpdateType.FixedUpdate);");
+                        sb.AppendLine($"            {managerName}.Unregister(this, {managerName}.UpdateType.FixedUpdate,{updateOrder});");
                     }
                 }
                 sb.AppendLine($"            {RegistrationFlagName} = false;");

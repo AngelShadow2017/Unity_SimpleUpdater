@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "jrn6yI0/Z2Y=",
+  "dgSpecHash": "MVymTlxtato=",
   "success": true,
-  "projectFilePath": "C:\\Users\\ZeroAs\\source\\repos\\ManualUpdateGenerator\\ManualUpdateGenerator\\ManualUpdateGenerator.csproj",
+  "projectFilePath": "E:\\Projects\\Unity_SimpleUpdater\\ManualUpdateGenerator\\ManualUpdateGenerator\\ManualUpdateGenerator.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\ZeroAs\\.nuget\\packages\\microsoft.codeanalysis.analyzers\\3.0.0\\microsoft.codeanalysis.analyzers.3.0.0.nupkg.sha512",
     "C:\\Users\\ZeroAs\\.nuget\\packages\\microsoft.codeanalysis.common\\3.8.0\\microsoft.codeanalysis.common.3.8.0.nupkg.sha512",

@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using ZeroAs.ZeroAs_Core.ManualUpdaters;
 
-[ManualUpdater]
+[ManualUpdater(ManualUpdateManager.UpdateOrder.FakePosition)]
 public partial class TestGenerate : MonoBehaviour
 {
     void Start()
@@ -18,8 +18,12 @@ public partial class TestGenerate : MonoBehaviour
     {
         Debug.Log("Update called");
     }
+    void ManualFixedUpdate()
+    {
+        Debug.Log("FixedUpdate called");
+    }
     void ManualDisable()
     {
-        Debug.Log("ManualDestroy called");
+        Debug.Log("ManualDisable called");
     }
 }
