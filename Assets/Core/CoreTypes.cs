@@ -46,6 +46,8 @@ namespace ZeroAs.ZeroAs_Core.ManualUpdaters
         };
         private static readonly List<MonobehaviourManagers> managers = new List<MonobehaviourManagers>();
         private static bool inited = false;
+        internal static FrameLockManager frameLockManager = new FrameLockManager();
+        public static PauseLock pauseLock = new PauseLock(); 
         private static void Init()
         {
             if (inited)
@@ -67,8 +69,9 @@ namespace ZeroAs.ZeroAs_Core.ManualUpdaters
                     shunts.TryAdd(order, index);
                 }
             }
+            frameLockManager.AddLock(pauseLock);
         }
-
+        
         static ManualUpdateManager()
         {
             Init();

@@ -147,12 +147,20 @@ namespace ZeroAs.ZeroAs_Core.ManualUpdaters
         // Update is called once per frame
         void Update()
         {
+            if (!ManualUpdateManager.frameLockManager.AllLocksOpen)
+            {
+                return;
+            }
             updates.FlushRemove();
             updates.Appends();
             updates.Traverse();
         }
         void FixedUpdate()
         {
+            if (!ManualUpdateManager.frameLockManager.AllLocksOpen)
+            {
+                return;
+            }
             fixedUpdates.FlushRemove();
             fixedUpdates.Appends();
             fixedUpdates.Traverse();
